@@ -1,19 +1,32 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Moon, Sun, LogOut } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   const navigationItems = [
-    { name: 'Features', href: '#features' },
-    { name: 'Pricing', href: '#pricing' },
+    { name: 'Features', href: '#features', action: () => scrollToSection('features') },
+    { name: 'Pricing', href: '#pricing', action: () => scrollToSection('pricing') },
     { name: 'About', href: '/about' },
     { name: 'Help', href: '/help' },
   ];
+
+  const scrollToSection = (id: string) => {
+    if (location.pathname !== '/') {
+      navigate('/', { state: { scrollTo: id } });
+    } else {
+      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   const isActive = (href: string) => {
     if (href.startsWith('#')) {
@@ -39,26 +52,60 @@ const Header = () => {
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
             {navigationItems.map((item) => (
-              <Link
-                key={item.name}
-                to={item.href}
-                className={`text-sm font-medium transition-smooth hover:text-primary ${
-                  isActive(item.href) ? 'text-primary' : 'text-muted-foreground'
-                }`}
-              >
-                {item.name}
-              </Link>
+              item.action ? (
+                <button
+                  key={item.name}
+                  onClick={item.action}
+                  className={`text-sm font-medium transition-smooth hover:text-primary ${
+                    isActive(item.href) ? 'text-primary' : 'text-muted-foreground'
+                  }`}
+                >
+                  {item.name}
+                </button>
+              ) : (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className={`text-sm font-medium transition-smooth hover:text-primary ${
+                    isActive(item.href) ? 'text-primary' : 'text-muted-foreground'
+                  }`}
+                >
+                  {item.name}
+                </Link>
+              )
             ))}
           </nav>
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center space-x-4">
-            <Button variant="ghost" size="sm">
-              Sign In
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggleTheme}
+              className="w-9 h-9"
+            >
+              {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
             </Button>
-            <Button variant="hero" size="sm">
-              Get Started
-            </Button>
+            
+            {user ? (
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-muted-foreground">
+                  {user.email?.split('@')[0]}
+                </span>
+                <Button variant="ghost" size="sm" onClick={signOut}>
+                  <LogOut className="w-4 h-4" />
+                </Button>
+              </div>
+            ) : (
+              <>
+                <Button variant="ghost" size="sm" onClick={() => navigate('/auth')}>
+                  Sign In
+                </Button>
+                <Button variant="hero" size="sm" onClick={() => navigate('/auth')}>
+                  Get Started
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
